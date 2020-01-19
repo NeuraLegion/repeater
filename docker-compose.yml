@@ -1,0 +1,22 @@
+version: "3.4"
+services:
+  rabbitmq:
+    image: "rabbitmq"
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+
+  repeater:
+    build:
+      context: .
+      target: builder
+    environment:
+      - AGENT_ID=guest
+      - AGENT_KEY=guest
+      - NEXPLOIT_DOMAIN=rabbitmq
+    entrypoint:
+      - make
+      - specs-integration
+    depends_on:
+      - rabbitmq
