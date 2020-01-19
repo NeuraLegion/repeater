@@ -1,0 +1,13 @@
+name: repeater
+version: 0.1.0
+
+authors:
+  - Bar Hofesh <bar.hofesh@gmail.com>
+
+targets:
+  repeater:
+    main: src/repeater.cr
+
+crystal: 0.32.1
+
+license: MIT
