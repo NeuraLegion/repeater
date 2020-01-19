@@ -33,7 +33,7 @@ WORKDIR /opt/repeater
 
 COPY src ./src
 COPY spec ./spec
-COPY spec_integration ./spec_integration
+# COPY spec_integration ./spec_integration
 COPY shard.yml ./
 
 # Install dependencies
@@ -59,7 +59,7 @@ RUN apt-get update -qq --fix-missing && apt-get install -y --no-install-recommen
 
 WORKDIR /opt/repeater
 
-COPY --from=builder /opt/repeater/bin/nexploit /usr/bin/
+COPY --from=builder /opt/repeater/bin/repeater /usr/bin/
 
 
-ENTRYPOINT ["/bin/bash", "-c", "/usr/bin/nexploit"]
+ENTRYPOINT ["/bin/bash", "-c", "/usr/bin/repeater"]
