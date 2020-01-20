@@ -10,10 +10,23 @@ module Repeater
           request_queue = channel.queue("requests")
           response_queue = channel.queue("responses")
           @logger.debug("QueueHandler subscribing to queue")
-          request_queue.subscribe(no_ack: true, block: true) do |msg|
-            @logger.debug("Received: #{msg.body_io.to_s}")
-            # channel.basic_ack(msg.delivery_tag)
-            spawn { message_handler(message: msg, queue: response_queue) }
+          loop do
+            @logger.debug("looping for messages in QueueHandler")
+            sleep 1
+            channel.basic_consume("responses", no_ack: true, exclusive: false, block: false) do |msg|
+              case msg.body_io.to_s
+              when "ack"
+                channel.basic_ack(msg.delivery_tag)
+              when "reject"
+                channel.basic_reject(msg.delivery_tag, requeue: true)
+              when "nack"
+                channel.basic_nack(msg.delivery_tag, requeue: true, multiple: true)
+              else
+                spawn do
+                  message_handler(message: msg, queue: response_queue)
+                end
+              end
+            end
           end
         end
       end
