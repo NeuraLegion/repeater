@@ -31,22 +31,12 @@ describe Repeater::QueueHandler do
         request_queue.publish(message)
 
         logger.debug("spec subscribing")
-        loop do
-          channel.basic_consume("responses", no_ack: true, exclusive: false, block: true) do |msg|
-            case msg.body_io.to_s
-            when "ack"
-              channel.basic_ack(msg.delivery_tag)
-            when "reject"
-              channel.basic_reject(msg.delivery_tag, requeue: true)
-            when "nack"
-              channel.basic_nack(msg.delivery_tag, requeue: true, multiple: true)
-            else
-              logger.info("Spec got back answer from agent")
-              # Make sure it's parsed currectly
-              r_data = Repeater::ResponseData.from_json(msg.body_io.to_s)
-              logger.debug("Got back: #{r_data.inspect}")
-            end
-          end
+
+        response_queue.subscribe(no_ack: false, block: true) do |msg|
+          logger.info("Spec got back answer from agent")
+          channel.basic_ack(msg.delivery_tag)
+          r_data = Repeater::ResponseData.from_json(msg.body_io.to_s)
+          logger.debug("Got back: #{r_data.inspect}")
         end
       end
     end
