@@ -17,12 +17,12 @@ module Repeater
     end
 
     def response_to_message(response : HTTP::Client::Response) : String
-      headers = Hash(String, String | Array(String)).new
+      headers = Hash(String, Array(String)).new
       response.headers.each do |name, value|
         headers[name] = value
       end
       ResponseData.new(
-        status: response.status_code,
+        status_code: response.status_code,
         headers: headers,
         body: response.body.to_s
       ).to_json
