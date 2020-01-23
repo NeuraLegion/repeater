@@ -1,0 +1,19 @@
+name: Repeater CI
+
+on:
+  push:
+    branches:
+      - master
+      - dima/build-image-ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build Docker image
+        run: docker build . --file Dockerfile --tag neuralegion/repeater
+      - name: Login into Docker
+        run: docker login --username=anatol1988 --password=${{ secrets.DOCKER_TOKEN }}
+      - name: Push Docker image
+        run: docker push neuralegion/repeater
