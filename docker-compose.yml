@@ -6,7 +6,6 @@ services:
       - "5672:5672"
     expose:
       - "5672"
-
   repeater:
     build:
       context: .

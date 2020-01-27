@@ -17,8 +17,17 @@ request_executor = Repeater::RequestExecutor.new(logger)
 
 # Setup and Run the QueueHandler
 queue_handler = Repeater::QueueHandler.new(logger, request_executor)
-queue_handler.run
+spawn queue_handler.run
 
 while queue_handler.running
   sleep 1
+end
+
+Signal::INT.trap do
+  exit
+end
+
+at_exit do
+  logger.info("Closing handler")
+  queue_handler.running = false
 end

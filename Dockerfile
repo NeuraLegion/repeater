@@ -62,4 +62,4 @@ WORKDIR /opt/repeater
 COPY --from=builder /opt/repeater/bin/repeater /usr/bin/
 
 
-ENTRYPOINT ["/bin/bash", "-c", "/usr/bin/repeater"]
+ENTRYPOINT ["/usr/bin/repeater"]

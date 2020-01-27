@@ -13,7 +13,7 @@ describe Repeater::QueueHandler do
     end
 
     logger.debug("Spec handler running")
-    client = AMQP::Client.new("amqp://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "queue.nexploit.app"}")
+    client = AMQP::Client.new("amqp://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}")
     connection = client.connect
     channel = connection.channel
     request_queue = channel.queue("requests")

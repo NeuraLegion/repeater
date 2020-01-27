@@ -2,7 +2,7 @@ require "amqp-client"
 
 module Repeater
   class QueueHandler
-    getter running : Bool = true
+    property running : Bool = true
 
     def initialize(@logger : Logger, @request_executor : RequestExecutor)
       @logger.debug("QueueHandler Initalized")
@@ -12,11 +12,12 @@ module Repeater
       # Setup Client
       @logger.debug("QueueHandler subscribing to queue")
       loop do
+        break unless running
         @logger.debug("Looping")
         sleep 0.1
         Fiber.yield
         begin
-          client = AMQP::Client.new("amqp://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "queue.nexploit.app"}")
+          client = AMQP::Client.new("amqp://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}")
           connection = client.connect
           channel = connection.channel
           request_queue = channel.queue("requests")
