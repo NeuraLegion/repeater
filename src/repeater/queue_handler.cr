@@ -20,8 +20,8 @@ module Repeater
           client = AMQP::Client.new("amqp://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}")
           connection = client.connect
           channel = connection.channel
-          request_queue = channel.queue("requests")
-          response_queue = channel.queue("responses")
+          request_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
+          response_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
           request_queue.subscribe(no_ack: true, block: true) do |msg|
             @logger.debug("Received: #{msg.body_io.to_s}")
             # channel.basic_ack(msg.delivery_tag)
