@@ -6,37 +6,42 @@ module Repeater
 
     def initialize(@logger : Logger, @request_executor : RequestExecutor)
       @logger.debug("QueueHandler Initalized")
+      @lock = Mutex.new
     end
 
     def run
       # Setup Client
       @logger.debug("QueueHandler subscribing to queue")
-      loop do
-        break unless running
-        @logger.debug("Looping")
-        sleep 0.1
-        Fiber.yield
-        begin
-          client = AMQP::Client.new("amqp://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}")
-          connection = client.connect
-          channel = connection.channel
-          request_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
-          response_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
-          request_queue.subscribe(no_ack: true, block: true) do |msg|
-            @logger.debug("Received: #{msg.body_io.to_s}")
-            # channel.basic_ack(msg.delivery_tag)
-            spawn do
-              message_handler(message: msg, queue: response_queue)
+      4.times do
+        spawn do
+          loop do
+            break unless running
+            sleep 0.1
+            begin
+              client = AMQP::Client.new("amqps://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}")
+              connection = client.connect
+              channel = connection.channel
+              request_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
+              response_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
+              request_queue.subscribe(no_ack: true, block: true) do |msg|
+                @logger.debug("Received: #{msg.body_io.to_s}")
+                # channel.basic_ack(msg.delivery_tag)
+                spawn do
+                  message_handler(message: msg, queue: response_queue)
+                end
+              end
+            rescue e : Exception
+              @logger.error("Error in subscribe loop: #{e.inspect_with_backtrace}")
+            ensure
+              connection.try &.close
             end
           end
-        rescue e : Exception
-          @logger.error("Error in subscribe loop: #{e.inspect_with_backtrace}")
-        ensure
-          connection.try &.close
+          @logger.info("Connection closed! loop broken")
+          @lock.synchronize do
+            @running = false
+          end
         end
       end
-      @logger.info("Connection closed! loop broken")
-      @running = false
     end
 
     def message_handler(message : AMQP::Client::Message, queue : AMQP::Client::Queue)
