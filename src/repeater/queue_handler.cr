@@ -18,7 +18,7 @@ module Repeater
             break unless running
             sleep 0.1
             begin
-              client = AMQP::Client.new("amqps://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}")
+              client = AMQP::Client.new("amqps://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672")
               connection = client.connect
               channel = connection.channel
               request_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
