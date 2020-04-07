@@ -40,7 +40,7 @@ COPY shard.yml ./
 RUN shards install
 
 # Build Repeater
-RUN shards build -p --error-trace --warnings=all --error-on-warnings -Dpreview_mt
+RUN shards build -p --error-trace -Dpreview_mt
 
 #
 # NexPloit
