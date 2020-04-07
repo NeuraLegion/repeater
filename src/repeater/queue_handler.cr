@@ -37,7 +37,7 @@ module Repeater
       end
 
       request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
-      response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
+      response_exchange = AMQP::Client::Exchange.new(response_connection.channel, "My Exchange")
 
       loop do
         break unless running
@@ -45,7 +45,7 @@ module Repeater
           request_queue.subscribe(no_ack: true, block: true) do |msg|
             Log.debug { "Received: #{msg.body_io.to_s}" }
             spawn do
-              message_handler(message: msg, queue: response_queue)
+              message_handler(message: msg, exchange: response_exchange)
             end
           end
         rescue e : Exception
@@ -54,7 +54,7 @@ module Repeater
       end
     end
 
-    def message_handler(message : AMQP::Client::Message, queue : AMQP::Client::Queue)
+    def message_handler(message : AMQP::Client::Message, exchange : AMQP::Client::Exchange)
       # Translate request from message string
       request = QueueTranslator.request_from_message(message)
       Log.debug { "Parsed request: #{request.inspect}" }
@@ -73,10 +73,10 @@ module Repeater
       response_message = QueueTranslator.response_to_message(response)
       # Send to queue
       Log.debug { "Sending: #{response_message}" }
-      queue.publish(
+      exchange.publish(
         message: response_message,
+        routing_key: message.properties.reply_to.to_s,
         props: AMQ::Protocol::Properties.new(
-          reply_to: message.properties.reply_to,
           correlation_id: message.properties.correlation_id
         )
       )
