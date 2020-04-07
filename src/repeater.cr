@@ -7,10 +7,8 @@ require "./repeater/**"
 module Repeater
   VERSION = "0.1.0"
   ::Log.builder.bind("*", :debug, ::Log::IOBackend.new)
-  Log     = ::Log.for("Repeater")
+  Log = ::Log.for("Repeater")
 end
-
-
 
 # Setup RequestExecutor
 request_executor = Repeater::RequestExecutor.new

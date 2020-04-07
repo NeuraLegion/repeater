@@ -73,7 +73,13 @@ module Repeater
       response_message = QueueTranslator.response_to_message(response)
       # Send to queue
       Log.debug { "Sending: #{response_message}" }
-      queue.publish(response_message)
+      queue.publish(
+        message: response_message,
+        props: Properties.new(
+          reply_to: message.properties.reply_to,
+          correlation_id: message.properties.correlation_id
+        )
+      )
     rescue e : Exception
       Log.error(exception: e) { "Error handling message: #{e.inspect_with_backtrace}" }
     end
