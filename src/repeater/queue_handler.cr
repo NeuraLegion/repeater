@@ -37,7 +37,7 @@ module Repeater
       end
 
       request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
-      response_exchange = AMQP::Client::Exchange.new(response_connection.channel, "My Exchange")
+      response_exchange = AMQP::Client::Exchange.new(response_connection.channel, "agents:#{ENV["AGENT_ID"]}:responses")
 
       loop do
         break unless running
