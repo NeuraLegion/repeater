@@ -2,12 +2,14 @@ require "amqp-client"
 
 module Repeater
   class QueueHandler
+    Log = Repeater::Log.for("QueueHandler")
+
     property running : Bool = true
 
     @client : AMQP::Client
 
-    def initialize(@logger : Logger, @request_executor : RequestExecutor)
-      @logger.debug("QueueHandler Initalized")
+    def initialize(@request_executor : RequestExecutor)
+      Log.debug { "QueueHandler Initalized" }
       @lock = Mutex.new
       @client = AMQP::Client.new(
         host: ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app",
@@ -16,21 +18,21 @@ module Repeater
         user: ENV["AGENT_ID"],
         password: ENV["AGENT_KEY"],
         tls: true
-        )
+      )
     end
 
     def run
-      @logger.info("Connecting to #{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672")
+      Log.info { "Connecting to #{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672" }
       requests_connection = @client.connect
       response_connection = @client.connect
 
       requests_connection.on_close do
-        @logger.info("requests_connection closed, reconnecting!")
+        Log.info { "requests_connection closed, reconnecting!" }
         requests_connection = @client.connect
       end
 
       response_connection.on_close do
-        @logger.info("response_connection closed, reconnecting!")
+        Log.info { "response_connection closed, reconnecting!" }
         response_connection = @client.connect
       end
 
@@ -41,13 +43,13 @@ module Repeater
         break unless running
         begin
           request_queue.subscribe(no_ack: true, block: true) do |msg|
-            @logger.debug("Received: #{msg.body_io.to_s}")
+            Log.debug { "Received: #{msg.body_io.to_s}" }
             spawn do
               message_handler(message: msg, queue: response_queue)
             end
           end
         rescue e : Exception
-          @logger.error("Error in subscribe loop: #{e.inspect_with_backtrace}")
+          Log.error { "Error in subscribe loop: #{e.inspect_with_backtrace}" }
         end
       end
     end
@@ -55,7 +57,7 @@ module Repeater
     def message_handler(message : AMQP::Client::Message, queue : AMQP::Client::Queue)
       # Translate request from message string
       request = QueueTranslator.request_from_message(message)
-      @logger.debug("Parsed request: #{request.inspect}")
+      Log.debug { "Parsed request: #{request.inspect}" }
       # Execute the request
       begin
         response = @request_executor.exec(
@@ -70,10 +72,10 @@ module Repeater
       # Translate the response to message (which will be sent to the queue)
       response_message = QueueTranslator.response_to_message(response)
       # Send to queue
-      @logger.debug("Sending: #{response_message}")
+      Log.debug { "Sending: #{response_message}" }
       queue.publish(response_message)
     rescue e : Exception
-      @logger.error("Error handling message: #{e.inspect_with_backtrace}")
+      Log.error(exception: e) { "Error handling message: #{e.inspect_with_backtrace}" }
     end
   end
 end

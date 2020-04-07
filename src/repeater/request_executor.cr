@@ -6,6 +6,7 @@ module Repeater
     include ConcurrentLoop
     include Synchronizable
 
+    Log = Repeater::Log.for("RequestExecuter")
     # For HTTP
     alias RequestData = NamedTuple(
       method: String,
@@ -30,15 +31,12 @@ module Repeater
     @ch : Channel(RequestData)
     @ws_ch : Channel(WSRequestData)
     @ctx : OpenSSL::SSL::Context::Client
-
-    @logger : Logger
     @timeout : Time::Span
     @name : String
 
     getter :timeout
 
     def initialize(
-      @logger,
       @concurrency = 50,
       @timeout = 120.seconds,
       @name = "RequestExecutor"
@@ -97,22 +95,22 @@ module Repeater
         data[:channel].send response
 
         # Log final Request
-        @logger.debug("Executor sent: #{req.inspect} @body: #{body}")
+        Log.debug { "Executor sent: #{req.inspect} @body: #{body}" }
         # Log final Response
-        @logger.debug("Executor received: #{response.inspect}")
+        Log.debug { "Executor received: #{response.inspect}" }
       end
     rescue e : IO::TimeoutError
       data[:channel].send e if data
-      @logger.error("Error executing request: #{e.inspect_with_backtrace}")
-      @logger.debug("Failed executing: #{req.inspect}")
+      Log.error(exception: e) { "Error executing request: #{e.inspect_with_backtrace}" }
+      Log.debug { "Failed executing: #{req.inspect}" }
     rescue e : IO::Error
       data[:channel].send e if data
-      @logger.error("Error executing request: #{e.inspect_with_backtrace}")
-      @logger.debug("Failed executing: #{req.inspect}")
+      Log.error(exception: e) { "Error executing request: #{e.inspect_with_backtrace}" }
+      Log.debug { "Failed executing: #{req.inspect}" }
     rescue e : Exception
       data[:channel].send e if data
-      @logger.error("Error executing request: #{e.inspect_with_backtrace}")
-      @logger.debug("Failed executing: #{req.inspect}")
+      Log.error(exception: e) { "Error executing request: #{e.inspect_with_backtrace}" }
+      Log.debug { "Failed executing: #{req.inspect}" }
     end
 
     private def ws_executor
@@ -151,18 +149,18 @@ module Repeater
         raise IO::TimeoutError.new("Timeout while waiting for WebSocket to respond") unless received
 
         # Log final Request
-        @logger.debug("Executor WebSocket sent: #{data[:body]}")
+        Log.debug { "Executor WebSocket sent: #{data[:body]}" }
         # Log final Response
-        @logger.debug("Executor received: #{received}")
+        Log.debug { "Executor received: #{received}" }
       rescue e : IO::TimeoutError
         data[:channel].send e
-        @logger.error("Error executing request: #{e.inspect_with_backtrace}")
+        Log.error(exception: e) { "Error executing request: #{e.inspect_with_backtrace}" }
       rescue e : IO::Error
         data[:channel].send e
-        @logger.error("Error executing request: #{e.inspect_with_backtrace}")
+        Log.error(exception: e) { "Error executing request: #{e.inspect_with_backtrace}" }
       rescue e : Exception
         data[:channel].send e
-        @logger.error("Error executing request: #{e.inspect_with_backtrace}")
+        Log.error(exception: e) { "Error executing request: #{e.inspect_with_backtrace}" }
       end
     end
 
@@ -179,8 +177,8 @@ module Repeater
         case resp = channel.receive
         when ::HTTP::Client::Response then resp
         when Exception                then raise resp
-        when IO::TimeoutError              then raise resp
-        when IO::Error                    then raise resp
+        when IO::TimeoutError         then raise resp
+        when IO::Error                then raise resp
         else
           raise "Unknown response type! #{resp} #{resp.class}"
         end
@@ -197,10 +195,10 @@ module Repeater
           channel: channel,
         })
         case resp = channel.receive
-        when String      then resp
-        when Exception   then raise resp
+        when String           then resp
+        when Exception        then raise resp
         when IO::TimeoutError then raise resp
-        when IO::Error       then raise resp
+        when IO::Error        then raise resp
         else
           raise "Unknown response type! #{resp} (#{resp.class})"
         end
@@ -208,9 +206,9 @@ module Repeater
     end
 
     private def log_status
-      @logger.debug("#{@name} status summary")
-      @logger.debug("HTTP fibers waiting for response: #{@http_waiting_for_answer.get}")
-      @logger.debug("WebSocket fibers waiting for response: #{@ws_waiting_for_answer.get}")
+      Log.debug { "#{@name} status summary" }
+      Log.debug { "HTTP fibers waiting for response: #{@http_waiting_for_answer.get}" }
+      Log.debug { "WebSocket fibers waiting for response: #{@ws_waiting_for_answer.get}" }
     end
 
     private def track_waiting

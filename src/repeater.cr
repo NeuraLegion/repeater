@@ -1,22 +1,22 @@
 require "amqp-client"
-require "logger"
+require "log"
 require "json"
 
 require "./repeater/**"
 
 module Repeater
   VERSION = "0.1.0"
+  ::Log.builder.bind("*", :debug, ::Log::IOBackend.new)
+  Log     = ::Log.for("Repeater")
 end
 
-# Setup Logger
-logger = Logger.new(STDOUT)
-logger.level = Logger::DEBUG
+
 
 # Setup RequestExecutor
-request_executor = Repeater::RequestExecutor.new(logger)
+request_executor = Repeater::RequestExecutor.new
 
 # Setup and Run the QueueHandler
-queue_handler = Repeater::QueueHandler.new(logger, request_executor)
+queue_handler = Repeater::QueueHandler.new(request_executor)
 spawn queue_handler.run
 
 while queue_handler.running
@@ -28,6 +28,5 @@ Signal::INT.trap do
 end
 
 at_exit do
-  logger.info("Closing handler")
   queue_handler.running = false
 end
