@@ -4,42 +4,45 @@ module Repeater
   class QueueHandler
     property running : Bool = true
 
+    @client : AMQP::Client
+    @connection_string : String
+
     def initialize(@logger : Logger, @request_executor : RequestExecutor)
       @logger.debug("QueueHandler Initalized")
       @lock = Mutex.new
+      @connection_string = "amqps://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672"
+      @client = AMQP::Client.new(url: @connection_string, frame_max: UInt32::Max)
     end
 
     def run
-      # Setup Client
-      @logger.debug("QueueHandler subscribing to queue")
-      4.times do
-        spawn do
-          loop do
-            break unless running
-            sleep 0.1
-            begin
-              client = AMQP::Client.new("amqps://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672")
-              connection = client.connect
-              channel = connection.channel
-              request_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
-              response_queue = channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
-              request_queue.subscribe(no_ack: true, block: true) do |msg|
-                @logger.debug("Received: #{msg.body_io.to_s}")
-                # channel.basic_ack(msg.delivery_tag)
-                spawn do
-                  message_handler(message: msg, queue: response_queue)
-                end
-              end
-            rescue e : Exception
-              @logger.error("Error in subscribe loop: #{e.inspect_with_backtrace}")
-            ensure
-              connection.try &.close
+      @logger.info("Connecting to #{@connection_string}")
+      requests_connection = @client.connect
+      response_connection = @client.connect
+
+      requests_connection.on_close do
+        @logger.info("requests_connection closed, reconnecting!")
+        requests_connection = @client.connect
+      end
+
+      response_connection.on_close do
+        @logger.info("response_connection closed, reconnecting!")
+        response_connection = @client.connect
+      end
+
+      request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
+      response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
+
+      loop do
+        break unless running
+        begin
+          request_queue.subscribe(no_ack: true, block: true) do |msg|
+            @logger.debug("Received: #{msg.body_io.to_s}")
+            spawn do
+              message_handler(message: msg, queue: response_queue)
             end
           end
-          @logger.info("Connection closed! loop broken")
-          @lock.synchronize do
-            @running = false
-          end
+        rescue e : Exception
+          @logger.error("Error in subscribe loop: #{e.inspect_with_backtrace}")
         end
       end
     end
