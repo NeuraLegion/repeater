@@ -75,7 +75,7 @@ module Repeater
       Log.debug { "Sending: #{response_message}" }
       queue.publish(
         message: response_message,
-        props: Properties.new(
+        props: AMQ::Protocol::Properties.new(
           reply_to: message.properties.reply_to,
           correlation_id: message.properties.correlation_id
         )
