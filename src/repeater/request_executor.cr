@@ -14,7 +14,7 @@ module Repeater
       body: ::HTTP::Client::BodyType?,
       channel: Channel(ResponseData),
     )
-    alias ResponseData = ::HTTP::Client::Response | Exception | IO::Timeout | Errno
+    alias ResponseData = ::HTTP::Client::Response | Exception | IO::TimeoutError | IO::Error
 
     # For WebSockets
     alias WSRequestData = NamedTuple(
@@ -23,7 +23,7 @@ module Repeater
       body: String,
       channel: Channel(WSResponseData),
     )
-    alias WSResponseData = String | Exception | IO::Timeout | Errno
+    alias WSResponseData = String | Exception | IO::TimeoutError | IO::Error
 
     @http_waiting_for_answer : Atomic(Int64)
     @ws_waiting_for_answer : Atomic(Int64)
@@ -101,11 +101,11 @@ module Repeater
         # Log final Response
         @logger.debug("Executor received: #{response.inspect}")
       end
-    rescue e : IO::Timeout
+    rescue e : IO::TimeoutError
       data[:channel].send e if data
       @logger.error("Error executing request: #{e.inspect_with_backtrace}")
       @logger.debug("Failed executing: #{req.inspect}")
-    rescue e : Errno
+    rescue e : IO::Error
       data[:channel].send e if data
       @logger.error("Error executing request: #{e.inspect_with_backtrace}")
       @logger.debug("Failed executing: #{req.inspect}")
@@ -148,16 +148,16 @@ module Repeater
           break if received
           sleep 1.second
         end
-        raise IO::Timeout.new("Timeout while waiting for WebSocket to respond") unless received
+        raise IO::TimeoutError.new("Timeout while waiting for WebSocket to respond") unless received
 
         # Log final Request
         @logger.debug("Executor WebSocket sent: #{data[:body]}")
         # Log final Response
         @logger.debug("Executor received: #{received}")
-      rescue e : IO::Timeout
+      rescue e : IO::TimeoutError
         data[:channel].send e
         @logger.error("Error executing request: #{e.inspect_with_backtrace}")
-      rescue e : Errno
+      rescue e : IO::Error
         data[:channel].send e
         @logger.error("Error executing request: #{e.inspect_with_backtrace}")
       rescue e : Exception
@@ -179,8 +179,8 @@ module Repeater
         case resp = channel.receive
         when ::HTTP::Client::Response then resp
         when Exception                then raise resp
-        when IO::Timeout              then raise resp
-        when Errno                    then raise resp
+        when IO::TimeoutError              then raise resp
+        when IO::Error                    then raise resp
         else
           raise "Unknown response type! #{resp} #{resp.class}"
         end
@@ -199,8 +199,8 @@ module Repeater
         case resp = channel.receive
         when String      then resp
         when Exception   then raise resp
-        when IO::Timeout then raise resp
-        when Errno       then raise resp
+        when IO::TimeoutError then raise resp
+        when IO::Error       then raise resp
         else
           raise "Unknown response type! #{resp} (#{resp.class})"
         end
