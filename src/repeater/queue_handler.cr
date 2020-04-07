@@ -5,17 +5,22 @@ module Repeater
     property running : Bool = true
 
     @client : AMQP::Client
-    @connection_string : String
 
     def initialize(@logger : Logger, @request_executor : RequestExecutor)
       @logger.debug("QueueHandler Initalized")
       @lock = Mutex.new
-      @connection_string = "amqps://#{ENV["AGENT_ID"]}:#{ENV["AGENT_KEY"]}@#{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672"
-      @client = AMQP::Client.new(url: @connection_string, frame_max: UInt32::Max)
+      @client = AMQP::Client.new(
+        host: ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app",
+        frame_max: UInt32::MAX,
+        port: 5672,
+        user: ENV["AGENT_ID"],
+        password: ENV["AGENT_KEY"],
+        tls: true
+        )
     end
 
     def run
-      @logger.info("Connecting to #{@connection_string}")
+      @logger.info("Connecting to #{ENV["NEXPLOIT_DOMAIN"]? || "amq.nexploit.app"}:5672")
       requests_connection = @client.connect
       response_connection = @client.connect
 
