@@ -37,6 +37,7 @@ module Repeater
       end
 
       request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
+      response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
 
       loop do
         break unless running
@@ -44,7 +45,6 @@ module Repeater
           request_queue.subscribe(no_ack: true, block: true) do |msg|
             Log.debug { "Received: #{msg.body_io.to_s}" }
             spawn do
-              response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
               message_handler(message: msg, queue: response_queue)
             end
           end
