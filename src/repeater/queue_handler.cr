@@ -26,18 +26,20 @@ module Repeater
       requests_connection = @client.connect
       response_connection = @client.connect
 
+      request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
+      response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
+
       requests_connection.on_close do
         Log.info { "requests_connection closed, reconnecting!" }
         requests_connection = @client.connect
+        request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
       end
 
       response_connection.on_close do
         Log.info { "response_connection closed, reconnecting!" }
         response_connection = @client.connect
+        response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
       end
-
-      request_queue = requests_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:requests")
-      response_queue = response_connection.channel.queue("agents:#{ENV["AGENT_ID"]}:responses")
 
       loop do
         break unless running
@@ -50,6 +52,7 @@ module Repeater
           end
         rescue e : Exception
           Log.error { "Error in subscribe loop: #{e.inspect_with_backtrace}" }
+          {requests_connection, response_connection}.each { |conn| conn.close }
         end
       end
     end
