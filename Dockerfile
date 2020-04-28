@@ -51,10 +51,8 @@ FROM ubuntu:19.10
 ARG CRYSTAL_WORKERS=8
 ENV CRYSTAL_WORKERS=$CRYSTAL_WORKERS
 
-RUN apt-get update -qq --fix-missing && apt-get install -y --no-install-recommends openssl \
-  libssl1.1 libdbus-1-3 libxml2 libxml2-dev libevent-2.1 apt-utils git ca-certificates \
-  curl libyaml-0-2 libxslt1-dev build-essential patch zlib1g-dev liblzma-dev \
-  libevent-pthreads-2.1-6
+RUN apt-get update -qq --fix-missing && apt-get install -y --no-install-recommends \
+  libevent-2.1 ca-certificates libevent-pthreads-2.1-6 curl
 
 WORKDIR /opt/repeater
 
