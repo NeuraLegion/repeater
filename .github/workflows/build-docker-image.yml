@@ -4,14 +4,23 @@ on:
   push:
     branches:
       - master
+      - nexploit-cli
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+      - name: Specify docker tag
+        shell: bash
+        run: echo "##[set-output name=tag;]$(case ${{ steps.extract_branch.outputs.branch }} in "master") echo "latest" ;; *) echo ${{ steps.extract_branch.outputs.branch }} ;; esac)"
+        id: specify_tag
       - name: Build Docker image
-        run: docker build . --file Dockerfile --tag neuralegion/repeater
+        run: docker build . --file Dockerfile --tag neuralegion/repeater:${{ steps.specify_tag.outputs.tag }}
       - name: Login into Docker
         run: docker login --username=anatol1988 --password=${{ secrets.DOCKER_TOKEN }}
       - name: Push Docker image
