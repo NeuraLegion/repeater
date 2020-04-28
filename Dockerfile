@@ -57,9 +57,12 @@ RUN apt-get update -qq --fix-missing && apt-get install -y --no-install-recommen
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN apt-get install -y --no-install-recommends nodejs
+RUN npm install @neuralegion/nexploit-cli --global
+
 WORKDIR /opt/repeater
 
 COPY --from=builder /opt/repeater/bin/repeater /usr/bin/
-
 
 ENTRYPOINT ["/usr/bin/repeater"]
