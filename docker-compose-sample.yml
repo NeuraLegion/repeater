@@ -1,0 +1,10 @@
+version: '3'
+services:
+  juiceshop.local:
+    image: bkimminich/juice-shop
+  repeater:
+    image: neuralegion/repeater:latest
+    restart: always
+    environment:
+      AGENT_KEY: g5f1clg.lkfcjgnyyuzp34a1fnzmxn8lrxcjuwgu
+      AGENT_ID: cdf07782-bc6c-486a-b459-e182808faa33
