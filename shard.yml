@@ -8,8 +8,10 @@ targets:
   repeater:
     main: src/repeater.cr
 
-crystal: 0.32.1
+crystal: 0.35.1
 
 dependencies:
   amqp-client:
     github: cloudamqp/amqp-client.cr
+  mt_helpers:
+    github: NeuraLegion/mt_helpers
