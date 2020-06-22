@@ -29,9 +29,9 @@ You can run this configuration with ```docker-compose up```. It'll throw an erro
 
 >repeater_1 | Unhandled exception in spawn: 403 - ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN. For details see the broker logfile. (AMQP::Client::Connection::ClosedException)
 
-because you have invalid `AGENT_ID` and `AGENT_KEY`. Go to https://nexploit.app/agent, add a new agent and copy its UUID. Put it to your `docker-compose.yml` file as `AGENT_ID`.
+because you have invalid `AGENT_ID` and `AGENT_KEY`. Go to `https://nexploit.app/agent`, add a new agent and copy its UUID. Put it to your `docker-compose.yml` file as `AGENT_ID`.
 
-Now we need to set up a proper API key for our agent. For this, go to https://nexploit.app/profile and find *Manage your application API keys* section. Add a new key via *Create new API key* button. Choose *agents:write:repeater* scope if you want to use it just like a local request producer.
+Now we need to set up a proper API key for our agent. For this, go to `https://nexploit.app/profile` and find *Manage your application API keys* section. Add a new key via *Create new API key* button. Choose *agents:write:repeater* scope if you want to use it just like a local request producer.
 
 ![](https://i.imgur.com/5LYzv4lm.png)
 
@@ -39,7 +39,7 @@ Copy a key and put it as `AGENT_KEY` to `docker-compose.yml`. Run ```docker-comp
 
 ![](https://i.imgur.com/GnL8Atim.png)
 
-Fill *Scan Name* field, select *Crawler* type as discovery type. Set http://juiceshop.local:3000 as a target. Then go to *Additional Settings* and select your agent in *Agents* field. Press *Run* and be ready to see security issues.
+Fill *Scan Name* field, select *Crawler* type as discovery type. Set `http://juiceshop.local:3000` as a target. Then go to *Additional Settings* and select your agent in *Agents* field. Press *Run* and get ready to see security issues.
 
 ## Extra Options
 
