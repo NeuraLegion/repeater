@@ -21,6 +21,7 @@ RUN apt-get install -y --no-install-recommends apt-utils ca-certificates curl gn
   build-essential libevent-dev libssl-dev libyaml-dev libgmp-dev git \
   libxml2 libxml2-dev libxslt1-dev build-essential patch zlib1g-dev liblzma-dev libevent-pthreads-2.1-6
 RUN apt-key adv --fetch-keys "https://keybase.io/crystal/pgp_keys.asc"
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN echo "deb https://dist.crystal-lang.org/apt crystal main" | tee /etc/apt/sources.list.d/crystal.list
 RUN apt-get update -qq
 RUN apt-get install -y --no-install-recommends crystal
@@ -52,7 +53,9 @@ ARG CRYSTAL_WORKERS=8
 ENV CRYSTAL_WORKERS=$CRYSTAL_WORKERS
 
 RUN apt-get update -qq --fix-missing && apt-get install -y --no-install-recommends \
-  libevent-2.1 ca-certificates libevent-pthreads-2.1-6 curl
+  libevent-2.1 ca-certificates libevent-pthreads-2.1-6 curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/repeater
 
