@@ -1,2 +1,6 @@
+ENV["AGENT_ID"] = "1"
+ENV["AGENT_KEY"] = "1"
+
 require "spec"
-require "../src/repeater"
+require "mt_helpers"
+require "../src/repeater/**"

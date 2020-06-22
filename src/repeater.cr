@@ -1,7 +1,7 @@
 require "amqp-client"
 require "log"
 require "json"
-
+require "mt_helpers"
 require "./repeater/**"
 
 module Repeater
