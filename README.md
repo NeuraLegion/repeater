@@ -1,3 +1,7 @@
+> **Deprecated**
+>
+> Use `nexploit-cli` [agent mode](https://github.com/NeuraLegion/nexploit-cli#%EF%B8%8F-start-agent) for this. 
+
 # Intro
 
 **Repeater** allows you to run NexPloit scans without exposing your ports outside. Also, it can be useful, if you want to run a local scan without deploying.
